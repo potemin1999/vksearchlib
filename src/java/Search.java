@@ -32,10 +32,10 @@ public class Search {
     final static String[] access_tokens = {
             "c8a89a78d018027bf56cd096294618170f6464136d1e1d6e552ef9046ca30ad190cb8356770570b746e01"
     };
-    HashMap<Integer,User> users;
+    static HashMap<Integer,User> users = new HashMap<Integer,User>();;
     static Object[][] cities = {
-            {1,"Санкт-Петербург"},
-            {2,"Москва"},
+            {1,"Москва"},
+            {2,"Санкт-Петербург"},
             {60,"Казань"},
             {109,"Пенза"},
             {123,"Самара"}
@@ -54,7 +54,6 @@ public class Search {
         }
         this.args = args;
         this.access_token = access_token;
-        this.users = new HashMap<Integer,User>();
         c = Calendar.getInstance();
         current_year = c.get(Calendar.YEAR);
     }
@@ -62,12 +61,17 @@ public class Search {
     public void writeInFile(User u){
         String s = u.toString();
         try {
-            f_output.write(Integer.toString(++last_user).getBytes());
-            f_output.write("   ".getBytes());
-            f_output.write(s.getBytes(Charset.forName("UTF-8")));
+            char[] n_char = new char[8];
+            for (int i = 0;i<n_char.length;i++)
+                n_char[i] = ' ';
+            u.writeStringOnPosition(Integer.toString(++last_user),0,n_char);
+            f_output.write(new String(n_char).getBytes());
+            f_output.write(" ".getBytes());
+            u.writeInStream(f_output);
+            //f_output.write(s.getBytes(Charset.forName("UTF-8")));
             f_output.write(System.getProperty("line.separator").getBytes());
             f_output.flush();
-            //System.out.println("write in file "+s);
+           // System.out.println("write in file "+s);
         }catch(Throwable t){
             //System.out.println("write in file "+s+" failed");
         }
@@ -76,13 +80,25 @@ public class Search {
     public int addUser(User u){
         users.put(u.id,u);
         if (u.bdate.contains(".")) {
-            String[] t = u.bdate.split(".");
-            if (t.length == 3) {
-                int year = Integer.parseInt(t[2]);
-                if (year<start_year || year>finish_year) return 1;
-            }else{
-                return 1;
+            char[] c = u.bdate.toCharArray();
+            for (int i = 0;i<c.length;i++){
+                if (c[i]=='.')
+                    c[i]=' ';
             }
+            String[] t = new String(c).split(" ");
+            if (t.length > 0) {
+                int year = Integer.parseInt(t[t.length - 1]);
+                if (year < start_year || year > finish_year)
+                    return 1;
+            }else{
+                System.out.println("in string \""+u.bdate+"\" "+(t.length-1)+" contains ' '");
+                //return 1;
+            }
+            //}else{
+                //return 1;
+            //}
+        }else{
+            return 1;
         }
         if (sex!=0)
             if (u.sex!=sex) return 1;
@@ -91,7 +107,7 @@ public class Search {
                 writeInFile(u);
             }else{
                 try{
-                    Long.parseLong(u.phone);
+                    Long.parseLong(u.phone.replace("-",""));
                     writeInFile(u);
                 }catch(Throwable t){}
             }
@@ -193,7 +209,7 @@ public class Search {
             }
         }
         //search(args[0],town,start_year,1,1000,0);*/
-        System.out.println("\nSEARCH FINISHED");
+        System.out.println("\n\nSEARCH FINISHED\n\n");
         //dump_users(System.out);
     }
 
@@ -260,13 +276,17 @@ public class Search {
 
 
     public static String request(String url) throws Throwable{
+        System.out.write('>') ;System.out.flush();
         InputStream is = requestIS(url);
+        System.out.write('>') ;System.out.flush();
         //System.out.println("request started");
         Scanner s = new Scanner(is,"UTF-8");
+        System.out.write('>');System.out.flush();
         StringBuilder sb = new StringBuilder();
         while (s.hasNextLine())
             sb.append(s.nextLine());
         is.close();
+        System.out.write('>');System.out.flush();
         final String st = sb.toString();
         //System.out.println("request finished: "+st);
         return st;
@@ -293,22 +313,51 @@ public class Search {
     }
 
     public static void main(String[] args){
-        Scanner s = new Scanner(System.in);
-        System.out.println();
-        print_cities();
-        System.out.println("Введите номер города : ");
-        String city = s.nextLine();
-        System.out.println("Введите минимальный возраст : ");
-        String min_age = s.nextLine();
-        System.out.println("Введите максимальный возраст : ");
-        String max_age = s.nextLine();
-        System.out.println("Введите пол ( 1=женщина; 2=мужчина; 0=любой ) : ");
-        int sex = s.nextInt();
-        System.out.println("Введите глубину поиска ( от 1 до 5 ) : ");
-        int depth = s.nextInt();
-        System.out.println("Введите ID стартового пользователя : ");
-        int id_start = s.nextInt();
-        new Search(getToken(),new String[]{id_start+"", city, min_age, max_age,sex+"",depth+""}).start();
+        InputStream is = System.in;
+        Scanner s = new Scanner(is);
+        while (true) {
+            try {
+                System.out.println();
+                print_cities();
+                System.out.print("Введите номер города : ");
+                String city = s.nextLine();
+                System.out.print("Введите минимальный возраст : ");
+                String min_age = s.nextLine();
+                System.out.print("Введите максимальный возраст : ");
+                String max_age = s.nextLine();
+                System.out.print("Введите пол ( 1=женщина; 2=мужчина; 0=любой ) : ");
+                int sex = s.nextInt();
+                System.out.print("Введите глубину поиска ( от 1 до 5 ) : ");
+                int depth = s.nextInt();
+                System.out.print("Введите ID стартового пользователя : ");
+                int id_start = s.nextInt();
+                new Search(getToken(), new String[]{id_start + "", city, min_age, max_age, sex + "", depth + ""}).start();
+                System.out.println("\n   Вы можете дополнить сведения, начав с другого пользователя, или же закрыть программу   \n   Для продолжения нажмите enter\n");
+                is.read();
+                is.read();
+                s.nextLine();
+                //is.reset();
+               // is.read();
+               // is.read();
+                //is.read();
+                //is.read();
+                //is.read();
+                //byte[] arr = new byte[8];
+                //System.in.read(arr,0,4);
+                /*for (int i = 0;i<arr.length;i++)
+                    System.out.print(arr[i]);
+                System.out.println();
+
+                System.out.println("теперь отпустите...");
+
+                System.in.read(arr,0,8);
+                for (int i = 0;i<arr.length;i++)
+                    System.out.print(arr[i]);
+                System.out.println();*/
+
+                //System.in.reset();
+            }catch (Throwable t){}
+        }
     }
 
     public static void print_cities(){
