@@ -16,6 +16,7 @@ import java.util.Scanner;
 
 public class Search {
 
+    static String main_file = "users.txt";
     Calendar c;
     File f;
    // BufferedWriter f_output;
@@ -32,7 +33,7 @@ public class Search {
     final static String[] access_tokens = {
             "c8a89a78d018027bf56cd096294618170f6464136d1e1d6e552ef9046ca30ad190cb8356770570b746e01"
     };
-    static HashMap<Integer,User> users = new HashMap<Integer,User>();;
+    public static HashMap<Integer,User> users = new HashMap<Integer,User>();;
     static Object[][] cities = {
             {1,"Москва"},
             {2,"Санкт-Петербург"},
@@ -44,7 +45,7 @@ public class Search {
     public Search(String access_token,String[] args){
         super();
         try {
-            f = new File("users.txt");
+            f = new File(main_file);
             f.setReadable(true);
             f.setWritable(true);
             f_output = new FileOutputStream(f);
