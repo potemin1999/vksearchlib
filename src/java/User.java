@@ -18,6 +18,7 @@ public class User {
         this.sex = sex;
     }
 
+    public boolean isFriendsReceived = false;
     int id;
     int sex;
     String bdate;
@@ -37,8 +38,8 @@ public class User {
     }
 
     public String toString(){
-        return new StringBuilder().append(id).append("    ").append(name[0]).append(" ").append(name[1]).append(" ").append(name[2]).append("    ")
-                .append(bdate).append("      ").append(city).append("      ").append(phone).append("\n").toString();
+        return new StringBuilder().append("id='").append(id).append("'    '").append(name[0]).append("' '").append(name[1]).append("' ").append(name[2]).append("    '")
+                .append(bdate).append("'      '").append(city).append("'      '").append(phone).append("' \n").toString();
     }
 
     public void writeInStream(OutputStream os){

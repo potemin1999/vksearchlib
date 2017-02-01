@@ -18,9 +18,9 @@ public class Search {
 
     static String main_file = "users.txt";
     Calendar c;
-    File f;
+    static File f;
    // BufferedWriter f_output;
-    FileOutputStream f_output;
+    static FileOutputStream f_output;
     int last_user;
     int current_year;
     int start_year = 0;
@@ -34,6 +34,7 @@ public class Search {
             "c8a89a78d018027bf56cd096294618170f6464136d1e1d6e552ef9046ca30ad190cb8356770570b746e01"
     };
     public static HashMap<Integer,User> users = new HashMap<Integer,User>();;
+
     static Object[][] cities = {
             {1,"Москва"},
             {2,"Санкт-Петербург"},
@@ -42,13 +43,21 @@ public class Search {
             {123,"Самара"}
     };
 
+    static{
+        try {
+            f = new File(main_file);
+            if (!f.exists()) {
+                f.setReadable(true);
+                f.setWritable(true);
+            }
+            f_output = new FileOutputStream(f);
+        }catch(Throwable t){}
+    }
+
     public Search(String access_token,String[] args){
         super();
         try {
-            f = new File(main_file);
-            f.setReadable(true);
-            f.setWritable(true);
-            f_output = new FileOutputStream(f);
+
           //  f_output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)));
         }catch(Throwable t){
             System.err.println(t.toString());
@@ -74,7 +83,7 @@ public class Search {
             f_output.flush();
            // System.out.println("write in file "+s);
         }catch(Throwable t){
-            //System.out.println("write in file "+s+" failed");
+            System.out.println("write in file "+s+" failed");
         }
     }
 
@@ -148,9 +157,10 @@ public class Search {
         return s;
     }
 
-    public void buildTree(int id,final int level,final int max_level){
+    public void buildTree(int id,final int level,final int max_level,int progress,int max){
         try {
             String s = null;
+            System.out.print("["+level+"]");
             if (no_access_token_mode)
                 s = request("https://api.vk.com/method/friends.get?user_id="+id+ "&fields=contacts,bdate,sex,city");
             else
@@ -159,26 +169,37 @@ public class Search {
             JSONObject root = new JSONObject(s);
             if (root.has("response")){
                 JSONArray response = root.getJSONArray("response");
-                System.out.println("["+level+"]: received "+response.length()+" friends of user "+id);
-                for (int i = 0; i<response.length(); i++){
-                    User u = User.parse(response.getJSONObject(i));
+                System.out.println("["+(progress+1)+" из "+max+"] : received "+response.length()+" friends of user "+id);
+                //for (int i = 0; i<response.length(); i++){
+                 //   JSONObject j_user = response.getJSONObject(i);
+                    //System.out.println("received   : "  +j_user.toString());
+                //}
+                final int r_length = response.length();
+                for (int i = 0; i<r_length; i++){
+                    JSONObject j_user = response.getJSONObject(i);
+                    User u = User.parse(j_user);
+                    //System.out.println("received   : "  +j_user.toString());
                     if (!users.containsKey(u.id)) {
                         //if (((!u.bdate.equalsIgnoreCase("bdate unknown")) && (!u.phone.equalsIgnoreCase("phone unkown")))
-                              //  && ((!u.bdate.equalsIgnoreCase("bdate unknown")) && (!u.phone.equalsIgnoreCase("phone unkown")))) {
-                            addUser(u);
-                            if (level<max_level) {
-                                if (!no_access_token_mode)
-                                    Thread.sleep(360);
-                                buildTree(u.id, level + 1, max_level);
-                            }
-                       // }
+                        //  && ((!u.bdate.equalsIgnoreCase("bdate unknown")) && (!u.phone.equalsIgnoreCase("phone unkown")))) {
+                        addUser(u);
+                    }else if (users.get(u.id).isFriendsReceived){
+                        continue;
                     }
+                    if (level<max_level) {
+                        if (!no_access_token_mode)
+                            Thread.sleep(330);
+                        u.isFriendsReceived = true;
+                        buildTree(u.id, level + 1, max_level, i, r_length);
+                    }
+                       // }
+
                 }
             }else{
                 System.out.println("NO RESPONSE : "+s);
             }
         }catch(Throwable t){
-            System.err.println("ERROR IN TREE BUILDING FOR USER "+id+" ON LEVEL "+level+" : " + t.toString());
+            System.out.println("ERROR IN TREE BUILDING FOR USER "+id+" ON LEVEL "+level+" : " + t.toString());
         }
     }
 
@@ -193,7 +214,7 @@ public class Search {
         String town = args[1];
         System.out.println("START YEAR:"+start_year+"  FINISH YEAR:"+finish_year);
 
-        buildTree(Integer.parseInt(args[0]),1,depth);
+        buildTree(Integer.parseInt(args[0]),1,depth,0,1);
        /* float year_weight = 1f/(finish_year - start_year + 1);
         float year_progress = 0;
         float month_progress = 0;
@@ -211,6 +232,10 @@ public class Search {
         }
         //search(args[0],town,start_year,1,1000,0);*/
         System.out.println("\n\nSEARCH FINISHED\n\n");
+        try {
+            //f_output.flush();
+           // f_output.close();
+        }catch(Throwable t){}
         //dump_users(System.out);
     }
 
@@ -316,7 +341,7 @@ public class Search {
     public static void main(String[] args){
         InputStream is = System.in;
         Scanner s = new Scanner(is);
-        while (true) {
+        //while (true) {
             try {
                 System.out.println();
                 print_cities();
@@ -333,32 +358,8 @@ public class Search {
                 System.out.print("Введите ID стартового пользователя : ");
                 int id_start = s.nextInt();
                 new Search(getToken(), new String[]{id_start + "", city, min_age, max_age, sex + "", depth + ""}).start();
-                System.out.println("\n   Вы можете дополнить сведения, начав с другого пользователя, или же закрыть программу   \n   Для продолжения нажмите enter\n");
-                is.read();
-                is.read();
-                s.nextLine();
-                //is.reset();
-               // is.read();
-               // is.read();
-                //is.read();
-                //is.read();
-                //is.read();
-                //byte[] arr = new byte[8];
-                //System.in.read(arr,0,4);
-                /*for (int i = 0;i<arr.length;i++)
-                    System.out.print(arr[i]);
-                System.out.println();
-
-                System.out.println("теперь отпустите...");
-
-                System.in.read(arr,0,8);
-                for (int i = 0;i<arr.length;i++)
-                    System.out.print(arr[i]);
-                System.out.println();*/
-
-                //System.in.reset();
             }catch (Throwable t){}
-        }
+        //}
     }
 
     public static void print_cities(){

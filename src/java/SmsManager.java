@@ -10,6 +10,8 @@ import java.util.Scanner;
  */
 public class SmsManager {
 
+    static String[] messages = null;
+
     public static void main(String[] args){
         File f = new File(Search.main_file);
         FileInputStream fis = null;
@@ -30,6 +32,8 @@ public class SmsManager {
 
         Scanner s = new Scanner(System.in);
         Scanner fs = new Scanner(fis,"UTF-8");
+        Search.users.clear();
+        int errors = 0;
         while (fs.hasNextLine()){
             String ss = "NULL";
             try {
@@ -51,26 +55,6 @@ public class SmsManager {
                         wait_for_new_string = false;
                     }
                 }
-                /*boolean prev_space = false;
-                for (int i = 0; i < c.length; i++) {
-                    if (c[i] == ' ') {
-                        prev_space = true;
-                        continue;
-                    }else
-                        prev_space = false;
-                    if ((prev_space) && (c[i] == ' '))
-                        c[i] = '!';
-
-                }
-                String cs = new String(c);
-                String[] sss = cs..replace('!','\0').split(" ");
-                System.out.print("result string:");
-                for (String aaa : sss){
-                    System.out.print('"');
-                    System.out.print(aaa);
-                    System.out.print('"');
-                }
-                System.out.println();*/
                 String id = sss[1];
                 User u = new User(Integer.parseInt(id), new String[]{sss[2], sss[3], ""}, sss[6], sss[5], sss[4], 0);
                 if (!Search.users.containsKey(u.id))
@@ -79,15 +63,56 @@ public class SmsManager {
                 System.err.println("ошибка в разборе строки: \n   "+ss+"причина:\n   "+t.toString());
             }
         }
+        System.out.println("список пользователей загружен, ошибок:" + errors + ", пользователей к обработке:" + Search.users.size());
         String message = getFile(fis2,"UTF-8");
-        String[] messages = null;
         if (message.contains("|"))
             messages = message.split("|");
         else
             messages = new String[]{message};
+        System.out.println("текст сообщений загружен: " + messages.length + " шаблонов");
+        prepare_messages();
+
         dump_users();
         dump_messages(messages);
+
+        send_messages();
     }
+
+
+    public static void prepare_messages(){
+        for (String s : messages){
+            if (s.endsWith("\n")) s = s.substring(0,s.length()-2);
+            s = s.trim();
+        }
+    }
+
+    public static void send_messages(){
+        for (User u : Search.users.values()){
+            try{
+
+            }catch(Throwable t){}
+        }
+    }
+
+
+
+
+    public void send_message(String number,String text){
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public static String getFile(FileInputStream fis,String charset_name){
         try {
@@ -110,7 +135,7 @@ public class SmsManager {
             byte[] arr_ch = implode(arr_b);
             return new String(arr_ch, Charset.forName(charset_name));
         }catch(Throwable t){
-
+            System.err.println("in function getFile() : "+t.toString());
         }
         return null;
     }
@@ -130,7 +155,7 @@ public class SmsManager {
 
     public static void dump_users(){
         for (User u : Search.users.values()){
-            System.out.println(u.toString());
+            System.out.print(u.toString());
         }
     }
 

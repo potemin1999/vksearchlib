@@ -11,7 +11,8 @@ public class Main {
         while (true) {
             System.out.println("Выберите задачу");
             System.out.println(" 1 - создание базы данных");
-            System.out.println(" 2 - отправка СМС");
+            //System.out.println(" 2 - отправка СМС");
+            System.out.println(" 2 - выход ");
             System.out.print("номер задачи: ");
             Scanner s = new Scanner(System.in);
             int i;
@@ -27,9 +28,12 @@ public class Main {
                     Search.main(args);
                     break;
                 }
-                case 2: {
+                /*case 2: {
                     SmsManager.main(args);
                     break;
+                }*/
+                case 2: {
+                    return;
                 }
             }
         }
